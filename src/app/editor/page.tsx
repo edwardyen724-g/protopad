@@ -1,47 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery } from 'react-query';
-import { supabase } from '@/lib/supabaseClient';
-import Editor from '@/components/Editor';
-import LivePreview from '@/components/LivePreview';
-import TemplateSelector from '@/components/TemplateSelector';
-import { fetchTemplates } from '@/lib/fetchTemplates';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { Editor } from 'lib/editor'; // Assuming there's an editor component located in lib/editor
+import { fetchTemplates } from 'lib/fetchTemplates'; // Function to fetch default templates
 
-const EditorPage: React.FC = () => {
-  const { user } = useAuth();
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const { data: templates, error: fetchError, isLoading: templatesLoading } = useQuery('templates', fetchTemplates);
+const LivePreview = dynamic(() => import('lib/LivePreview'), { ssr: false });
+
+const Page: React.FC = () => {
+  const supabase = useSupabaseClient();
+  const { data: templates = [], isLoading } = useQuery('fetchTemplates', fetchTemplates);
 
   useEffect(() => {
-    if (templates && templates.length > 0) {
-      setSelectedTemplate(templates[0].id); // Select the first template by default
+    // Effect to handle any initialization logic for enhancing the editor
+    if (templates.length > 0) {
+      // You can initialize the editor with the first template or any other business logic needed
     }
   }, [templates]);
 
-  if (templatesLoading) {
+  if (isLoading) {
     return <div>Loading templates...</div>;
   }
 
-  if (fetchError) {
-    return <div>Error loading templates: {fetchError instanceof Error ? fetchError.message : String(fetchError)}</div>;
-  }
-
   return (
-    <div className="flex flex-col h-screen">
-      <h1 className="text-3xl font-bold text-center mt-4">Prototype faster, iterate smarter with ProtoPad</h1>
-      {user ? (
-        <div className="flex flex-grow">
-          <TemplateSelector templates={templates} onSelect={setSelectedTemplate} />
-          <div className="flex-grow">
-            {selectedTemplate && <Editor templateId={selectedTemplate} />}
-            <LivePreview templateId={selectedTemplate} />
-          </div>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold">Prototype faster, iterate smarter with ProtoPad</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <Editor templates={templates} />
         </div>
-      ) : (
-        <div className="text-center mt-4">Please log in to start prototyping.</div>
-      )}
+        <div>
+          <LivePreview />
+        </div>
+      </div>
     </div>
   );
 };
 
-export default EditorPage;
+export default Page;
