@@ -1,18 +1,34 @@
-import { withAuth } from 'next-auth/middleware';
-import NextAuth from 'next-auth';
-import { SupabaseAdapter } from '@next-auth/supabase-adapter';
-import { createClient } from '@supabase/supabase-js';
+import { defineConfig } from 'next';
+import tailwindcss from 'tailwindcss';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-const nextConfig = {
+export default defineConfig({
   reactStrictMode: true,
+  swcMinify: true,
   experimental: {
     appDir: true,
   },
-};
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  },
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.css$/,
+      use: [
+        'style-loader',
+        'css-loader',
+        {
+          loader: 'postcss-loader',
+          options: {
+            postcssOptions: {
+              plugins: [tailwindcss],
+            },
+          },
+        },
+      ],
+    });
 
-export default nextConfig;
+    return config;
+  },
+});
